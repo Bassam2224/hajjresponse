@@ -1,17 +1,116 @@
 @import "tailwindcss";
 
-* {
-  box-sizing: border-box;
+/* ── CSS Theme Variables ─────────────────────────────────────────────────── */
+:root {
+  --bg:          #f9fafb;
+  --bg-card:     #ffffff;
+  --bg-elevated: #f3f4f6;
+  --bg-input:    #ffffff;
+  --text:        #111827;
+  --text-2:      #6b7280;
+  --text-3:      #9ca3af;
+  --border:      #e5e7eb;
+  --border-2:    #d1d5db;
+  --shadow:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --nav:         #0f1e45;
+  --nav-text:    rgba(255,255,255,0.5);
+  --nav-active:  #ffffff;
 }
 
-body {
+[data-theme="dark"] {
+  --bg:          #0a1628;
+  --bg-card:     #0f1e45;
+  --bg-elevated: #1a2f5e;
+  --bg-input:    #1a2f5e;
+  --text:        #f1f5f9;
+  --text-2:      #94a3b8;
+  --text-3:      #64748b;
+  --border:      #1e3a5f;
+  --border-2:    #2d4a78;
+  --shadow:      0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --nav:         #071020;
+  --nav-text:    rgba(255,255,255,0.45);
+  --nav-active:  #ffffff;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html, body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: #fff;
-  color: #1f2937;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-#root {
-  width: 100%;
-  min-height: 100vh;
+#root { width: 100%; min-height: 100vh; }
+
+/* ── Dark mode overrides — applied globally via data-theme ───────────────── */
+/* These handle un-themed pages automatically */
+[data-theme="dark"] .bg-white    { background-color: var(--bg-card)     !important; }
+[data-theme="dark"] .bg-gray-50  { background-color: var(--bg-elevated) !important; }
+[data-theme="dark"] .bg-gray-100 { background-color: var(--bg-elevated) !important; }
+[data-theme="dark"] .bg-\[\#f9fafb\] { background-color: var(--bg) !important; }
+[data-theme="dark"] .bg-\[\#fafaf9\] { background-color: var(--bg) !important; }
+
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200 { border-color: var(--border) !important; }
+
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-gray-700 { color: #e2e8f0 !important; }
+[data-theme="dark"] .text-gray-600 { color: #cbd5e1 !important; }
+[data-theme="dark"] .text-gray-500 { color: var(--text-2) !important; }
+[data-theme="dark"] .text-gray-400 { color: var(--text-3) !important; }
+[data-theme="dark"] .text-gray-300 { color: #475569 !important; }
+
+[data-theme="dark"] .shadow-sm  { box-shadow: var(--shadow) !important; }
+[data-theme="dark"] .shadow-md  { box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+[data-theme="dark"] .shadow-lg  { box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important; }
+[data-theme="dark"] .shadow-2xl { box-shadow: 0 24px 48px rgba(0,0,0,0.7) !important; }
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bg-input) !important;
+  color: var(--text) !important;
+  border-color: var(--border-2) !important;
 }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--text-3) !important; }
+
+[data-theme="dark"] table th { color: var(--text-2) !important; }
+[data-theme="dark"] table td { color: var(--text) !important; }
+
+/* Leaflet dark mode */
+[data-theme="dark"] .leaflet-container { background: #0a1628 !important; }
+[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(7,16,32,0.85) !important;
+  color: #64748b !important;
+}
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+}
+[data-theme="dark"] .leaflet-popup-tip { background: var(--bg-card) !important; }
+
+/* ── Smooth transitions on all interactive elements ─────────────────────── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+/* But don't slow down transforms/opacity (animations) */
+.animate-pulse, .animate-ping, .animate-spin,
+[style*="animation"], [style*="transition"] {
+  transition: none !important;
+}
+
+/* ── RTL support ─────────────────────────────────────────────────────────── */
+[dir="rtl"] .flex-row { flex-direction: row-reverse; }
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
