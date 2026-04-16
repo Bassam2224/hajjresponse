@@ -6,7 +6,7 @@ import { useIncidents } from '../../context/IncidentContext'
 import { STATUS_STAGES } from '../../context/IncidentContext'
 import { HOSPITALS, HEALTH_CENTERS, haversineDist } from '../../data/medicalFacilities'
 import { useTheme } from '../../context/ThemeContext'
-import { classifyGlucose } from '../../utils/glucoseLogic'
+import { classifyGlucose, getKitMatch } from '../../utils/glucoseLogic'
 
 // ── Leaflet icon factories ─────────────────────────────────────────────────
 const makeIcon = (html, w, h) => L.divIcon({
@@ -191,6 +191,12 @@ function IncidentCard({ inc, updateIncident }) {
           )
         })()}
         {inc.golfCartRequested && <span className="bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full text-[10px] font-semibold">🛺 Cart dispatched</span>}
+        {(() => {
+          const km = getKitMatch(inc)
+          return km.canVolunteer
+            ? <span className="bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full text-[10px] font-semibold">✅ {km.label}</span>
+            : <span className="bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full text-[10px] font-semibold">🛺 {km.label}</span>
+        })()}
         {inc.glucose && inc.cgmReading && (() => {
           const gc = classifyGlucose(inc.cgmReading)
           if (!gc || !gc.dronePayload) return null
@@ -447,6 +453,194 @@ function MedicalPointsPanel({ incidents }) {
   )
 }
 
+// ── AI Camera Detection cards ──────────────────────────────────────────────
+const CAMERA_ALERTS = [
+  {
+    id:          'CAM-J04',
+    label:       'Jamarat Bridge — Pillar B Camera 04',
+    zone:        'Jamarat',
+    coords:      '21.4228° N, 39.8656° E',
+    confidence:  87,
+    thermal:     '39.1°C',
+    duration:    '2m 14s stationary',
+    // incident that gets auto-created
+    incidentData: {
+      pilgrim: 'Unknown Pilgrim — CAM-J04', nationality: 'Unknown', age: null,
+      zone: 'Jamarat', type: 'Possible Collapse — AI Camera Detection',
+      tier: 1, detection: 'AI Camera Detection', status: 'Detected',
+      risk: 'High', conditions: [], medications: null, bloodType: null,
+      glucose: false, cgmReading: null,
+    },
+    autoTrigger: true, // this card auto-creates an incident every 60s
+  },
+  {
+    id:          'CAM-M12',
+    label:       'Mina Tent City — Sector 7 Camera 12',
+    zone:        'Mina',
+    coords:      '21.4201° N, 39.8871° E',
+    confidence:  74,
+    thermal:     '38.4°C',
+    duration:    '1m 42s stationary',
+    incidentData: {
+      pilgrim: 'Unknown Pilgrim — CAM-M12', nationality: 'Unknown', age: null,
+      zone: 'Mina', type: 'Possible Collapse — AI Camera Detection',
+      tier: 1, detection: 'AI Camera Detection', status: 'Detected',
+      risk: 'Medium', conditions: [], medications: null, bloodType: null,
+      glucose: false, cgmReading: null,
+    },
+    autoTrigger: false,
+  },
+  {
+    id:          'CAM-A08',
+    label:       'Arafat Plain — East Perimeter Camera 08',
+    zone:        'Arafat',
+    coords:      '21.3549° N, 39.9854° E',
+    confidence:  91,
+    thermal:     '39.6°C',
+    duration:    '3m 05s stationary',
+    incidentData: {
+      pilgrim: 'Unknown Pilgrim — CAM-A08', nationality: 'Unknown', age: null,
+      zone: 'Arafat', type: 'Possible Collapse — AI Camera Detection',
+      tier: 1, detection: 'AI Camera Detection', status: 'Detected',
+      risk: 'High', conditions: [], medications: null, bloodType: null,
+      glucose: false, cgmReading: null,
+    },
+    autoTrigger: false,
+  },
+]
+
+function AICameraDetection({ addIncident }) {
+  const [dismissed, setDismissed]     = useState({})
+  const [dispatched, setDispatched]   = useState({})
+  const [lastTrigger, setLastTrigger] = useState(null)
+  const [countdown, setCountdown]     = useState(60)
+
+  // Auto-trigger incident from CAM-J04 every 60 seconds
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          const auto = CAMERA_ALERTS.find(a => a.autoTrigger)
+          if (auto) {
+            addIncident(auto.incidentData)
+            setLastTrigger(new Date().toLocaleTimeString())
+          }
+          return 60
+        }
+        return c - 1
+      })
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [addIncident])
+
+  const handleDispatch = (cam) => {
+    setDispatched(prev => ({...prev, [cam.id]: true}))
+    addIncident(cam.incidentData)
+  }
+
+  return (
+    <div className="mt-8">
+      {/* Header */}
+      <div className="bg-gray-800 text-white rounded-2xl p-4 mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="font-bold text-sm flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse inline-block" />
+              AI Camera Detection — Passive Monitoring
+            </div>
+            <p className="text-gray-300 text-xs leading-relaxed max-w-2xl">
+              Powered by Saudi Arabia's existing <strong className="text-white">15,000+ camera network</strong>. AI detects stationary thermal signatures consistent with collapse — no wristband or phone required. Unmonitored pilgrims only.
+            </p>
+          </div>
+          {/* Auto-trigger countdown */}
+          <div className="bg-white/10 rounded-xl px-3 py-2 text-center flex-shrink-0">
+            <div className="text-xs text-gray-400 mb-0.5">Next auto-incident</div>
+            <div className="font-black text-xl text-white font-mono">{countdown}s</div>
+            <div className="text-[10px] text-gray-500">CAM-J04</div>
+            {lastTrigger && <div className="text-[9px] text-green-400 mt-0.5">Last: {lastTrigger}</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Camera alert cards */}
+      <div className="space-y-3">
+        {CAMERA_ALERTS.map(cam => {
+          const isDismissed = dismissed[cam.id]
+          const isDispatched = dispatched[cam.id]
+          const confColor = cam.confidence >= 85 ? 'text-red-600' : cam.confidence >= 70 ? 'text-amber-600' : 'text-gray-600'
+          const confBg    = cam.confidence >= 85 ? 'bg-red-50 border-red-300' : cam.confidence >= 70 ? 'bg-amber-50 border-amber-300' : 'bg-gray-50 border-gray-200'
+
+          return (
+            <div key={cam.id} className={`bg-white rounded-xl border-2 shadow-sm p-4 transition-opacity ${isDismissed ? 'opacity-40' : ''} ${cam.confidence>=85?'border-red-300':cam.confidence>=70?'border-amber-300':'border-gray-200'}`}>
+              <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                <div>
+                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                    <span className="font-semibold text-xs text-[#0f1e45]">{cam.label}</span>
+                    <span className="text-[10px] text-gray-400">{cam.id}</span>
+                    {cam.autoTrigger && (
+                      <span className="text-[9px] bg-gray-700 text-white px-1.5 py-0.5 rounded-full font-bold">AUTO-LIVE</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-gray-500">📍 {cam.zone} · {cam.coords}</div>
+                </div>
+                <div className={`rounded-xl border px-3 py-1.5 text-center ${confBg}`}>
+                  <div className={`font-black text-lg ${confColor}`}>{cam.confidence}%</div>
+                  <div className="text-[9px] text-gray-400">Confidence</div>
+                </div>
+              </div>
+
+              {/* Alert details */}
+              <div className="grid grid-cols-3 gap-2 text-center text-[10px] mb-3">
+                <div className="bg-gray-50 rounded-lg py-1.5 px-1">
+                  <div className="font-bold text-gray-700 truncate">Stationary collapse</div>
+                  <div className="text-gray-400">Alert Type</div>
+                </div>
+                <div className={`rounded-lg py-1.5 ${parseFloat(cam.thermal)>=39?'bg-red-50':'bg-amber-50'}`}>
+                  <div className={`font-bold ${parseFloat(cam.thermal)>=39?'text-red-600':'text-amber-600'}`}>{cam.thermal}</div>
+                  <div className="text-gray-400">Thermal</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg py-1.5">
+                  <div className="font-bold text-orange-600 text-[9px]">{cam.duration}</div>
+                  <div className="text-gray-400">Duration</div>
+                </div>
+              </div>
+
+              {/* Alert type label */}
+              <div className="flex items-center gap-1.5 text-[11px] bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 mb-3">
+                <span>📷</span>
+                <span className="font-semibold">Stationary figure detected — possible collapse</span>
+                <span className="ml-auto text-[9px] text-gray-400">Thermal + motion</span>
+              </div>
+
+              {/* Action buttons */}
+              {!isDismissed && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setDismissed(prev => ({...prev, [cam.id]: true}))}
+                    className="flex-1 border border-gray-200 text-gray-500 text-[11px] font-semibold py-2 rounded-xl hover:border-gray-400 hover:text-gray-700 transition-colors"
+                  >
+                    ✗ Mark as False Alarm
+                  </button>
+                  <button
+                    onClick={() => handleDispatch(cam)}
+                    disabled={isDispatched}
+                    className={`flex-[2] text-[11px] font-bold py-2 rounded-xl transition-colors ${isDispatched ? 'bg-green-100 text-green-700' : 'bg-[#0f1e45] hover:bg-[#1a3060] text-white'}`}
+                  >
+                    {isDispatched ? '✅ Volunteer Dispatched' : '🚶 Dispatch Nearest Volunteer'}
+                  </button>
+                </div>
+              )}
+              {isDismissed && (
+                <div className="text-center text-xs text-gray-400 py-1">Marked as false alarm · No action taken</div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── AI Predictive Monitor ──────────────────────────────────────────────────
 const AI_PILGRIMS = [
   { id:'P-1001', name:'Mohammed Al-Otaibi', age:72, nationality:'Saudi', zone:'Mina',       risk:82, temp:38.9, hr:108, spo2:93, exposure:'1h 23m', factors:['Age 72','Prolonged sun exposure','HR elevated','Temp 38.9°C'], status:'alert' },
@@ -461,7 +655,7 @@ const AI_PILGRIMS = [
   { id:'P-1010', name:'Nour Al-Din',        age:76, nationality:'Morocco',zone:'Mina',      risk:88, temp:39.2, hr:115, spo2:92, exposure:'1h 48m', factors:['Age 76','CRITICAL — temp 39.2°C','SpO₂ 92%','HR 115'],          status:'critical' },
 ]
 
-function AIPredictiveMonitor() {
+function AIPredictiveMonitor({ addIncident }) {
   const [filter, setFilter] = useState('all')
   const [alertSent, setAlertSent] = useState({})
 
@@ -562,21 +756,83 @@ function AIPredictiveMonitor() {
           </div>
         ))}
       </div>
+
+      {/* AI Camera Detection — passive monitoring of unmonitored pilgrims */}
+      <AICameraDetection addIncident={addIncident} />
+    </div>
+  )
+}
+
+// ── Responder Distribution Panel ──────────────────────────────────────────
+// Verified SRCA Hajj 2025 data
+const SRCA_STATS = [
+  { role:'Humanitarian Volunteer', icon:'🙋', count:150,    tier:null,   color:'bg-gray-100 text-gray-700',   barColor:'bg-gray-400', note:'Reporting only — no medical dispatch' },
+  { role:'Paramedic Volunteer',    icon:'🚶', count:400,    tier:1,      color:'bg-green-100 text-green-700', barColor:'bg-green-500', note:'Tier 1 · BLS · 300m radius · On foot' },
+  { role:'Golf Cart Paramedic',    icon:'🛺', count:16,     tier:2,      color:'bg-amber-100 text-amber-700', barColor:'bg-amber-500', note:'Tier 2 · SRCA paramedic · AED + IV + O₂' },
+  { role:'SRCA Central Staff',     icon:'🏥', count:'~0',  tier:null,   color:'bg-blue-100 text-blue-700',   barColor:'bg-blue-400',  note:'Medical points only — hospital transfer' },
+]
+const SRCA_TOTAL = 550
+
+function ResponderDistributionPanel() {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mt-4">
+      <div className="px-4 py-3 border-b border-gray-100 bg-[#0f1e45] text-white">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          👥 Responder Distribution
+          <span className="text-xs bg-white/20 text-white/80 px-2 py-0.5 rounded-full font-normal">{SRCA_TOTAL}+ total SRCA</span>
+        </h3>
+        <p className="text-white/50 text-xs mt-0.5">Verified SRCA Hajj 2025 data · Two-tier dispatch model</p>
+      </div>
+      <div className="p-3 space-y-2.5">
+        {SRCA_STATS.map(s => {
+          const barW = typeof s.count === 'number' ? Math.round((s.count / 400) * 100) : 5
+          return (
+            <div key={s.role}>
+              <div className="flex items-center gap-2 mb-1">
+                <span>{s.icon}</span>
+                <span className="text-xs font-semibold text-[#0f1e45] flex-1 truncate">{s.role}</span>
+                {s.tier && (
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${s.color}`}>Tier {s.tier}</span>
+                )}
+                <span className={`text-xs font-black ${s.barColor.replace('bg-','text-')}`}>{s.count}</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
+                <div className={`h-full rounded-full ${s.barColor} transition-all`} style={{width:`${barW}%`}} />
+              </div>
+              <div className="text-[10px] text-gray-400 pl-6">{s.note}</div>
+            </div>
+          )
+        })}
+        <div className="border-t border-gray-100 pt-2 flex justify-between text-[10px] text-gray-400">
+          <span>🇸🇦 Saudi Red Crescent Authority — Hajj 2025</span>
+          <span className="font-bold text-[#0f1e45]">Total: 550+</span>
+        </div>
+      </div>
     </div>
   )
 }
 
 // ── Drone & Camera Operations ──────────────────────────────────────────────
 const DRONES = [
-  { id:'DRN-01', name:'Matrice 350 RTK — Alpha', zone:'Mina', status:'delivering', battery:72, altitude:15, payload:'AED + Cooling Pack', eta:'1m 20s', thermal:true },
-  { id:'DRN-02', name:'Matrice 350 RTK — Bravo', zone:'Jamarat', status:'patrolling', battery:88, altitude:18, payload:'Standby', eta:null, thermal:true },
-  { id:'DRN-03', name:'Falcon AI — Surveillance', zone:'Arafat', status:'surveillance', battery:61, altitude:30, payload:'None (camera only)', eta:null, thermal:true },
+  { id:'DRN-01', name:'Matrice 350 RTK — Alpha', zone:'Mina',    status:'delivering',  battery:72, altitude:15, payload:'AED + Cooling Pack',    thermal:true,
+    origin:'Mina Al Jasar Hospital', destination:'Jamarat Medical Center — Landing Pad B', eta:'6 min' },
+  { id:'DRN-02', name:'Matrice 350 RTK — Bravo', zone:'Jamarat', status:'returning',   battery:88, altitude:18, payload:'Standby',              thermal:true,
+    origin:'Arafat General Hospital', destination:'Muzdalifah Health Center — Landing Pad A', eta:null },
+  { id:'DRN-03', name:'Falcon AI — Surveillance', zone:'Arafat',  status:'surveillance',battery:61, altitude:30, payload:'None (camera only)',   thermal:true,
+    origin:null, destination:null, eta:null },
 ]
 const CAMERAS = [
-  { id:'CAM-A1', label:'Jamarat Bridge — North',   alerts:3, density:'Very High', thermal:'38.6°C peak', flag:'Stationary pilgrim detected' },
+  { id:'CAM-A1', label:'Jamarat Bridge — North',    alerts:3, density:'Very High', thermal:'38.6°C peak', flag:'Stationary pilgrim detected' },
   { id:'CAM-B2', label:'Mina Tent City — Sector 4', alerts:1, density:'High',      thermal:'37.9°C peak', flag:'Crowd buildup near water station' },
-  { id:'CAM-C3', label:'Arafat Plain — Centre',    alerts:0, density:'Medium',    thermal:'36.8°C peak', flag:null },
-  { id:'CAM-D4', label:'Masjid al-Haram — East',   alerts:5, density:'Very High', thermal:'39.1°C peak', flag:'Heat pocket detected — 12 pilgrims' },
+  { id:'CAM-C3', label:'Arafat Plain — Centre',     alerts:0, density:'Medium',    thermal:'36.8°C peak', flag:null },
+  { id:'CAM-D4', label:'Masjid al-Haram — East',    alerts:5, density:'Very High', thermal:'39.1°C peak', flag:'Heat pocket detected — 12 pilgrims' },
+]
+
+// Fixed hospital → health-center drone routes
+const DRONE_ROUTES = [
+  { payload:'AED Unit',       icon:'⚡', origin:'Mina Al Jasar Hospital',     destination:'Jamarat Medical Center — Landing Pad B',    zone:'Mina',    time:'~6 min' },
+  { payload:'Glucagon Kit',   icon:'💉', origin:'Arafat General Hospital',     destination:'Muzdalifah Health Center — Landing Pad A',  zone:'Arafat',  time:'~6 min' },
+  { payload:'IV Saline × 4', icon:'🧴', origin:'Noor Specialist Hospital',    destination:'Mina East Health Center — Landing Pad C',   zone:'Mina',    time:'~6 min' },
 ]
 
 function DroneCameraOps() {
@@ -587,10 +843,20 @@ function DroneCameraOps() {
     setTimeout(() => setDispatching(prev => ({...prev, [id]: 'sent'})), 1200)
   }
 
-  const droneStatusColor = { delivering:'bg-amber-100 text-amber-700', patrolling:'bg-blue-100 text-blue-700', surveillance:'bg-purple-100 text-purple-700' }
+  const droneStatusColor = {
+    delivering:  'bg-amber-100 text-amber-700',
+    returning:   'bg-blue-100 text-blue-700',
+    surveillance:'bg-purple-100 text-purple-700',
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-5 space-y-5">
+
+      {/* Operational model note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-800 leading-relaxed">
+        <strong>📋 Drone Delivery Model:</strong> Drones operate on fixed hospital-to-health-center routes using designated landing pads — they do not fly to patients or responders directly. Medical staff collect supplies from the landing pad and carry them the last 50–200m on foot or by golf cart. Operated by <strong>Terra Drone Arabia</strong> in partnership with <strong>NUPCO</strong> and the <strong>Saudi Ministry of Health</strong> — Hajj 2025 verified.
+      </div>
+
       {/* Drone fleet */}
       <div>
         <h2 className="font-bold text-[#0f1e45] mb-3 flex items-center gap-2">
@@ -621,10 +887,20 @@ function DroneCameraOps() {
                   <div className="text-gray-400">Thermal</div>
                 </div>
               </div>
-              <div className="text-[11px] text-gray-600 mb-2"><strong>Payload:</strong> {d.payload}</div>
-              {d.eta && <div className="text-[11px] text-amber-600 font-semibold mb-2">ETA delivery: {d.eta}</div>}
+              <div className="text-[11px] text-gray-600 mb-1"><strong>Payload:</strong> {d.payload}</div>
+              {d.origin && (
+                <div className="text-[10px] text-gray-500 mb-0.5">
+                  <span className="font-semibold">From:</span> {d.origin}
+                </div>
+              )}
+              {d.destination && (
+                <div className="text-[10px] text-gray-500 mb-1">
+                  <span className="font-semibold">To:</span> {d.destination}
+                </div>
+              )}
+              {d.eta && <div className="text-[11px] text-amber-600 font-semibold mb-2">ETA to landing pad: {d.eta}</div>}
               {/* Thermal camera simulation */}
-              <div className="relative rounded-lg overflow-hidden bg-gray-900 h-16 flex items-center justify-center">
+              <div className="relative rounded-lg overflow-hidden bg-gray-900 h-14 flex items-center justify-center mt-2">
                 <div className="absolute inset-0 opacity-40" style={{background:'radial-gradient(ellipse at 30% 50%,#ef4444,#f97316,#1d4ed8,#1e1b4b)'}} />
                 <div className="relative z-10 text-white/70 text-[10px] font-mono text-center">
                   <div>THERMAL FEED · {d.id}</div>
@@ -636,33 +912,35 @@ function DroneCameraOps() {
         </div>
       </div>
 
-      {/* Delivery dispatch */}
+      {/* Delivery dispatch — fixed routes */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <h3 className="font-bold text-[#0f1e45] text-sm mb-3">🏥 Dispatch Drone Medical Supply Delivery</h3>
+        <h3 className="font-bold text-[#0f1e45] text-sm mb-1">🏥 Dispatch Drone Medical Supply Delivery</h3>
+        <p className="text-xs text-gray-400 mb-3">Supplies delivered to designated landing pads at health centers — not to responders or patients directly.</p>
         <div className="grid sm:grid-cols-3 gap-3">
-          {[
-            { payload:'AED Unit', icon:'⚡', zone:'Mina', target:'Incident INC-009', time:'~4 min' },
-            { payload:'Glucose Gel x4', icon:'🍬', zone:'Jamarat', target:'Volunteer K. Ali', time:'~3 min' },
-            { payload:'Cooling Pack', icon:'🧊', zone:'Arafat', target:'Incident INC-007', time:'~6 min' },
-          ].map(({ payload, icon, zone, target, time }) => (
+          {DRONE_ROUTES.map(({ payload, icon, origin, destination, zone, time }) => (
             <div key={payload} className="border border-purple-200 bg-purple-50 rounded-xl p-3">
               <div className="text-2xl mb-1.5">{icon}</div>
-              <div className="font-semibold text-xs text-[#0f1e45] mb-0.5">{payload}</div>
-              <div className="text-[10px] text-gray-500 mb-0.5">To: {target}</div>
-              <div className="text-[10px] text-gray-500 mb-2">Zone: {zone} · Est. {time}</div>
+              <div className="font-semibold text-xs text-[#0f1e45] mb-1">{payload}</div>
+              <div className="text-[10px] text-gray-500 mb-0.5">
+                <span className="font-semibold">Origin:</span> {origin}
+              </div>
+              <div className="text-[10px] text-gray-500 mb-0.5">
+                <span className="font-semibold">Destination:</span> {destination}
+              </div>
+              <div className="text-[10px] text-gray-500 mb-2">Zone: {zone} · ETA {time}</div>
               <button
                 onClick={() => dispatch(payload)}
-                disabled={dispatching[payload]}
-                className={`w-full py-1.5 rounded-lg text-[11px] font-bold transition-all ${dispatching[payload]==='sent'?'bg-green-100 text-green-700':'dispatching[payload]'?'bg-purple-200 text-purple-500':'bg-purple-700 hover:bg-purple-800 text-white'}`}
+                disabled={!!dispatching[payload]}
+                className={`w-full py-1.5 rounded-lg text-[11px] font-bold transition-all ${dispatching[payload]==='sent'?'bg-green-100 text-green-700':dispatching[payload]?'bg-purple-200 text-purple-500':'bg-purple-700 hover:bg-purple-800 text-white'}`}
               >
-                {dispatching[payload]==='sent' ? '✅ Dispatched' : dispatching[payload] ? 'Dispatching…' : '🚁 Dispatch Now'}
+                {dispatching[payload]==='sent' ? '✅ Dispatched to Landing Pad' : dispatching[payload] ? 'Dispatching…' : '🚁 Dispatch Now'}
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Camera AI analysis */}
+      {/* Camera AI zone analysis */}
       <div>
         <h2 className="font-bold text-[#0f1e45] mb-3 flex items-center gap-2">
           <span>📷</span> Baseer AI Camera Analysis — 15,000+ Cameras
@@ -707,7 +985,7 @@ function DroneCameraOps() {
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────
 export default function ManagementDashboard() {
-  const { incidents, updateIncident } = useIncidents()
+  const { incidents, addIncident, updateIncident } = useIncidents()
   const [activeTab, setActiveTab] = useState('live')
   const active   = incidents.filter(i => i.status !== 'Resolved')
   const resolved = incidents.filter(i => i.status === 'Resolved')
@@ -721,11 +999,11 @@ export default function ManagementDashboard() {
       <div className="bg-[#0f1e45] text-white px-4 sm:px-6 py-3">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label:'Active Incidents',   val:String(active.length),   sub:`${critical.length} critical`,   color:'text-red-400',    pulse:true  },
-            { label:'Responders On Duty', val:'12',                    sub:'3 dispatched',                  color:'text-blue-300',   pulse:false },
-            { label:'Avg Response Time',  val:'3.8 min',               sub:'↓ 68% vs baseline',             color:'text-green-400',  pulse:false },
-            { label:'AI Predictive Alerts',val:String(aiAlerts),       sub:'healthy pilgrims flagged',      color:'text-purple-300', pulse:true  },
-            { label:'Resolved Today',     val:String(resolved.length), sub:'incidents closed',              color:'text-green-400',  pulse:false },
+            { label:'Active Incidents',    val:String(active.length),   sub:`${critical.length} critical`,          color:'text-red-400',    pulse:true  },
+            { label:'SRCA Personnel',      val:'550+',                   sub:'Hajj 2025 verified total',             color:'text-blue-300',   pulse:false },
+            { label:'Avg Response Time',   val:'3.8 min',               sub:'↓ 68% vs baseline',                   color:'text-green-400',  pulse:false },
+            { label:'AI Predictive Alerts',val:String(aiAlerts),        sub:'healthy pilgrims flagged',             color:'text-purple-300', pulse:true  },
+            { label:'Resolved Today',      val:String(resolved.length), sub:'incidents closed',                     color:'text-green-400',  pulse:false },
           ].map(({ label, val, sub, color, pulse }) => (
             <div key={label} className="bg-white/10 rounded-xl px-3 py-2">
               <div className="text-xs text-white/50 mb-0.5 flex items-center gap-1">
@@ -776,17 +1054,18 @@ export default function ManagementDashboard() {
                 ))}
               </div>
             </div>
-            {/* Right — Map + Hospitals */}
+            {/* Right — Map + Hospitals + Responder Distribution */}
             <div className="lg:col-span-2">
               <h2 className="font-bold text-[#0f1e45] mb-3">Hajj Site Map — Live</h2>
               <HajjMap incidents={incidents} updateIncident={updateIncident} />
               <MedicalPointsPanel incidents={incidents} />
+              <ResponderDistributionPanel />
             </div>
           </div>
         </div>
       )}
 
-      {activeTab === 'ai' && <AIPredictiveMonitor />}
+      {activeTab === 'ai' && <AIPredictiveMonitor addIncident={addIncident} />}
       {activeTab === 'drone' && <DroneCameraOps />}
     </div>
   )

@@ -91,6 +91,13 @@ const RISK_COLOR = {
   Low:     'bg-green-100 text-green-700',
 }
 
+// ── Role type helper ─────────────────────────────────────────────────────────
+function getRoleType(role) {
+  if (role === 'humanitarian_volunteer') return 'humanitarian'
+  if (role === 'golf_cart_paramedic')   return 'golf_cart'
+  return 'paramedic' // paramedic_volunteer or legacy roles
+}
+
 function lerp(a, b, t) { return a + (b - a) * t }
 
 function fmtDist(m) { return m >= 1000 ? `${(m/1000).toFixed(1)}km` : `${m}m` }
@@ -395,6 +402,140 @@ function DroneModal({ assignment, patientGlucose, onClose, t, isDark }) {
   )
 }
 
+// ── Humanitarian Volunteer home screen ────────────────────────────────────
+const REPORT_TYPES = [
+  'Pilgrim collapsed',
+  'Heat exhaustion',
+  'Crowd crush',
+  'Person unresponsive',
+  'Injury / bleeding',
+  'Diabetic emergency',
+  'Other',
+]
+
+function HumanitarianHome({ responder, isDark, t, toggleDuty }) {
+  const [selected, setSelected] = useState(null)
+  const [submitted, setSubmitted] = useState(false)
+  const [submittedType, setSubmittedType] = useState(null)
+
+  const bg    = isDark ? 'bg-[#0a1628]' : 'bg-[#fafaf9]'
+  const card  = isDark ? 'bg-[#0f1e45] border-[#1e3a5f]' : 'bg-white border-gray-200'
+  const textP = isDark ? 'text-white'    : 'text-[#0f1e45]'
+  const textM = isDark ? 'text-white/50' : 'text-gray-500'
+
+  const handleSubmit = () => {
+    if (!selected) return
+    setSubmittedType(selected)
+    setSubmitted(true)
+  }
+
+  const handleAnother = () => {
+    setSubmitted(false)
+    setSelected(null)
+    setSubmittedType(null)
+  }
+
+  return (
+    <div className={`min-h-screen ${bg}`}>
+      {/* Header */}
+      <div className={`px-4 pt-7 pb-5 ${isDark ? 'bg-[#0f1e45]' : 'bg-gray-800'} text-white`}>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full bg-gray-500/30 flex items-center justify-center text-xl">🙋</div>
+          <div>
+            <div className="font-bold">{responder.name}</div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] bg-gray-500/40 text-gray-200 px-2 py-0.5 rounded-full font-bold border border-gray-500/50">
+                {t('resp_humanitarian_badge')}
+              </span>
+              <span className="text-xs text-gray-300">· {responder.zone}</span>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse mr-1" />
+            <span className="text-xs text-green-300 font-semibold">{t('resp_on_duty')}</span>
+          </div>
+        </div>
+        <div className={`rounded-xl border px-3 py-2 text-xs ${isDark?'bg-white/5 border-white/10':'bg-white/10 border-white/20'} text-gray-200`}>
+          <div className="font-semibold mb-0.5">{t('resp_humanitarian_standby')}</div>
+          <div className="opacity-70">{t('resp_humanitarian_standby_sub')}</div>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
+        {!submitted ? (
+          <>
+            {/* Report button section */}
+            <div className={`rounded-2xl border p-5 ${card}`}>
+              <div className={`text-xs font-bold uppercase tracking-wide mb-3 ${textM}`}>{t('resp_report_type')}</div>
+              <div className="space-y-2">
+                {REPORT_TYPES.map(type => (
+                  <button key={type} type="button" onClick={() => setSelected(type)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      selected === type
+                        ? isDark ? 'border-amber-500 bg-amber-900/20 text-amber-300' : 'border-amber-500 bg-amber-50 text-amber-700'
+                        : isDark ? 'border-[#1e3a5f] text-white/70 hover:border-amber-700' : 'border-gray-200 text-gray-600 hover:border-amber-300'
+                    }`}>
+                    {selected === type && <span className="mr-2 text-amber-500">✓</span>}
+                    {type}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!selected}
+                className="w-full mt-4 bg-amber-500 hover:bg-amber-400 disabled:bg-gray-300 disabled:text-gray-400 text-white font-bold py-4 rounded-xl transition-colors text-base shadow-lg shadow-amber-900/20">
+                {t('resp_report_submit')}
+              </button>
+            </div>
+
+            {/* What happens info */}
+            <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${isDark?'bg-blue-900/20 border-blue-800 text-blue-300':'bg-blue-50 border-blue-200 text-blue-700'}`}>
+              ℹ️ Your report is instantly forwarded to the nearest Paramedic Volunteer in your zone. You do not need to approach the patient — stay nearby and safe.
+            </div>
+          </>
+        ) : (
+          /* Submitted confirmation */
+          <div className={`rounded-2xl border p-6 text-center ${card}`}>
+            <div className="text-5xl mb-3">✅</div>
+            <div className={`font-black text-lg mb-1 ${textP}`}>{t('resp_report_submitted')}</div>
+            <div className={`text-sm mb-2 ${textM}`}>
+              <strong className="text-amber-500">{submittedType}</strong>
+            </div>
+            <p className={`text-xs leading-relaxed mb-5 ${textM}`}>{t('resp_report_sent_note')}</p>
+            <div className={`grid grid-cols-3 gap-2 text-center text-xs mb-5 rounded-xl border p-3 ${isDark?'bg-white/5 border-white/10':'bg-gray-50 border-gray-100'}`}>
+              {[
+                { label:'Status',   val:'Forwarded', color:'text-green-500' },
+                { label:'ETA',      val:'~3–5 min',  color:'text-amber-500' },
+                { label:'Zone',     val:responder.zone?.split(' ')[0]||'—', color:textP },
+              ].map(({label,val,color}) => (
+                <div key={label}>
+                  <div className={`font-bold ${color}`}>{val}</div>
+                  <div className={`text-[10px] ${textM}`}>{label}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={handleAnother} className={`w-full border-2 font-bold py-3 rounded-xl text-sm ${isDark?'border-amber-600 text-amber-400 hover:bg-amber-900/20':'border-amber-500 text-amber-600 hover:bg-amber-50'}`}>
+              {t('resp_report_another')}
+            </button>
+          </div>
+        )}
+
+        {/* SRCA attribution */}
+        <div className={`rounded-xl px-3 py-2.5 text-xs ${isDark?'bg-white/5 text-white/30':'bg-gray-100 text-gray-400'}`}>
+          🇸🇦 SRCA Hajj 2025 · 150 Humanitarian Volunteers deployed · Reporting only — no medical dispatch
+        </div>
+
+        {/* End shift */}
+        <button onClick={toggleDuty}
+          className={`w-full border-2 font-semibold py-2.5 rounded-xl text-sm transition-colors ${isDark?'border-white/10 text-white/50 hover:border-red-500 hover:text-red-400':'border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-600'}`}>
+          🔚 {t('resp_end_shift')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 export default function ResponderHome() {
   const { responder, toggleDuty, notification, setNotification, acceptAssignment, declineAssignment, assignment, completeAssignment } = useResponder()
@@ -557,6 +698,13 @@ export default function ResponderHome() {
     )
   }
 
+  const roleType = getRoleType(responder.role)
+
+  // Humanitarian volunteers get a simplified reporting screen — no medical dispatch
+  if (roleType === 'humanitarian') {
+    return <HumanitarianHome responder={responder} isDark={isDark} t={t} toggleDuty={toggleDuty} />
+  }
+
   // ── MAP COMPONENT ──────────────────────────────────────────────────────────
   const MapSection = ({ isStandby = false }) => (
     <div className="relative w-full h-full" style={{minHeight: isStandby ? '55vh' : undefined}}>
@@ -674,7 +822,7 @@ export default function ResponderHome() {
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 {[
                   { label:'Zone Incidents', val:zoneIncidentCount, color:'text-red-500' },
-                  { label:'Your Role',      val:responder.role?.split(' ')[0]||'—', color:textP },
+                  { label:'Tier',           val:roleType === 'golf_cart' ? 'Tier 2' : 'Tier 1', color:roleType === 'golf_cart' ? 'text-amber-500' : 'text-green-500' },
                   { label:'Responders',     val:OTHER_RESPONDERS.length+1, color:'text-blue-500' },
                 ].map(({label,val,color}) => (
                   <div key={label} className={`rounded-xl py-2 border ${isDark?'bg-white/5 border-white/10':'bg-gray-50 border-gray-100'}`}>
@@ -683,6 +831,16 @@ export default function ResponderHome() {
                   </div>
                 ))}
               </div>
+              {roleType === 'golf_cart' && (
+                <div className={`mt-2 rounded-xl px-3 py-2 text-xs ${isDark?'bg-amber-900/20 border border-amber-800 text-amber-300':'bg-amber-50 border border-amber-200 text-amber-700'}`}>
+                  🛺 Golf Cart Kit: AED · IV Access · Oxygen · Glucagon · IV Fluids · Stretcher
+                </div>
+              )}
+              {roleType === 'paramedic' && (
+                <div className={`mt-2 rounded-xl px-3 py-2 text-xs ${isDark?'bg-green-900/20 border border-green-800 text-green-300':'bg-green-50 border border-green-200 text-green-700'}`}>
+                  🚶 {t('resp_300m_only')}
+                </div>
+              )}
             </div>
 
             <div className={`text-xs px-3 py-2 rounded-xl ${isDark?'bg-white/5':'bg-gray-50'}`} style={{color:'var(--text-3)'}}>
@@ -811,14 +969,24 @@ export default function ResponderHome() {
 
           {/* ── Status update bar ─────────────────────────────────────────── */}
           <div className={`rounded-2xl border p-4 ${card}`}>
-            <div className={`text-xs font-bold uppercase tracking-wide mb-3 ${textM}`}>{t('resp_update_status')}</div>
+            <div className={`text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2 ${textM}`}>
+              {t('resp_update_status')}
+              {roleType === 'golf_cart' && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark?'bg-amber-900/30 text-amber-300':'bg-amber-100 text-amber-700'}`}>🛺 Golf Cart</span>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              {[
+              {(roleType === 'golf_cart' ? [
+                { action:'onScene',    label:t('resp_gc_on_scene'),    color:'bg-blue-600 hover:bg-blue-700',   disabled: phase!=='enroute',                      timeKey:'onScene'  },
+                { action:'treating',   label:t('resp_gc_treatment'),   color:'bg-amber-500 hover:bg-amber-600', disabled: phase!=='onScene',                      timeKey:'treating' },
+                { action:'escalating', label:t('resp_gc_transporting'),color:'bg-purple-600 hover:bg-purple-700',disabled: !['onScene','treating','escalated'].includes(phase), timeKey:'escalated'},
+                { action:'done',       label:t('resp_gc_resolved'),    color:'bg-green-600 hover:bg-green-700', disabled: phase==='enroute',                      timeKey:'done'     },
+              ] : [
                 { action:'onScene',    label:t('resp_on_scene'),  color:'bg-blue-600 hover:bg-blue-700',   disabled: phase!=='enroute',                      timeKey:'onScene'  },
                 { action:'treating',   label:t('resp_treating'),  color:'bg-amber-500 hover:bg-amber-600', disabled: phase!=='onScene',                      timeKey:'treating' },
                 { action:'escalating', label:t('resp_escalate'),  color:'bg-red-600 hover:bg-red-700',     disabled: !['onScene','treating','escalated'].includes(phase), timeKey:'escalated'},
                 { action:'done',       label:t('resp_resolved'),  color:'bg-green-600 hover:bg-green-700', disabled: phase==='enroute',                      timeKey:'done'     },
-              ].map(({ action, label, color, disabled, timeKey }) => (
+              ]).map(({ action, label, color, disabled, timeKey }) => (
                 <div key={action}>
                   <button onClick={() => handleStatusUpdate(action)} disabled={disabled}
                     className={`w-full ${color} disabled:bg-gray-300 disabled:text-gray-400 text-white font-bold py-3 rounded-xl text-xs transition-colors`}>
@@ -895,6 +1063,18 @@ export default function ResponderHome() {
               className="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
               🚁 {t('resp_drone_request')}
             </button>
+          )}
+
+          {/* Golf Cart — Request Hospital Transfer button */}
+          {roleType === 'golf_cart' && phase === 'escalated' && (
+            <div className={`rounded-2xl border-2 border-red-400 p-3 ${isDark?'bg-red-900/10':'bg-red-50'}`}>
+              <div className={`text-xs font-bold mb-2 text-red-600`}>{t('resp_hospital_transfer')}</div>
+              <p className={`text-xs mb-3 ${textM}`}>Request ambulance from nearest hospital to collect patient at current medical point.</p>
+              <button
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                🚑 Request Hospital Ambulance
+              </button>
+            </div>
           )}
 
           {/* Message box */}

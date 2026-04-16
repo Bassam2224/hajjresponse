@@ -6,35 +6,44 @@ import { useLang } from '../../context/LanguageContext'
 
 const RESPONDER_TYPES = [
   {
-    id: 'Volunteer',
-    labelKey: 'reg_role_volunteer',
+    id: 'humanitarian_volunteer',
+    labelKey: 'reg_role_humanitarian',
+    badge: 'bg-gray-100 text-gray-700 border-gray-300',
+    badgeDark: 'bg-gray-800/60 text-gray-300 border-gray-600',
+    icon: '🙋',
+    descKey: 'reg_role_humanitarian_desc',
+    skills: ['Crowd Management', 'Basic First Aid', 'Communication'],
+    tier: null,
+    tierLabel: 'Reporting Only',
+    tierColor: 'bg-gray-100 text-gray-600',
+  },
+  {
+    id: 'paramedic_volunteer',
+    labelKey: 'reg_role_paramedic_vol',
     badge: 'bg-green-100 text-green-700 border-green-300',
     badgeDark: 'bg-green-900/40 text-green-300 border-green-700',
     icon: '🚶',
-    descKey: 'reg_role_volunteer_desc',
-    skills: ['Basic First Aid','CPR Certified','Crowd Management','Diabetic Emergency'],
+    descKey: 'reg_role_paramedic_vol_desc',
+    skills: ['Basic First Aid', 'CPR Certified', 'Crowd Navigation', 'Diabetic Emergency', 'Glucose Gel Administration', 'Wound Care'],
+    tier: 1,
+    tierLabel: 'Tier 1 — On Foot · 300m dispatch radius',
+    tierColor: 'bg-green-100 text-green-700',
   },
   {
-    id: 'Paramedic (Golf Cart)',
-    labelKey: 'reg_role_paramedic',
+    id: 'golf_cart_paramedic',
+    labelKey: 'reg_role_golf_cart',
     badge: 'bg-amber-100 text-amber-700 border-amber-300',
     badgeDark: 'bg-amber-900/40 text-amber-300 border-amber-700',
     icon: '🛺',
-    descKey: 'reg_role_paramedic_desc',
-    skills: ['CPR Certified','IV Access','Cardiac Response','Patient Transport'],
-  },
-  {
-    id: 'Emergency Vehicle',
-    labelKey: 'reg_role_vehicle',
-    badge: 'bg-red-100 text-red-700 border-red-300',
-    badgeDark: 'bg-red-900/40 text-red-300 border-red-700',
-    icon: '🚑',
-    descKey: 'reg_role_vehicle_desc',
-    skills: ['Advanced Life Support','IV Access','Intubation','Hospital Transfer'],
+    descKey: 'reg_role_golf_cart_desc',
+    skills: ['CPR Certified', 'IV Access', 'AED Certified', 'Glucagon Administration', 'Oxygen Therapy', 'Patient Transport'],
+    tier: 2,
+    tierLabel: 'Tier 2 — SRCA Paramedic · Golf Cart',
+    tierColor: 'bg-amber-100 text-amber-700',
   },
 ]
 
-const SKILLS_LIST = ['Basic First Aid','CPR Certified','IV Access','Cardiac Response','Crowd Management','Diabetic Emergency','Patient Transport','Advanced Life Support']
+const SKILLS_LIST = ['Basic First Aid','CPR Certified','IV Access','AED Certified','Cardiac Response','Crowd Navigation','Crowd Management','Diabetic Emergency','Glucose Gel Administration','Glucagon Administration','Oxygen Therapy','Patient Transport','Wound Care']
 const ZONES = ['Masjid al-Haram','Mina','Arafat','Muzdalifah','Jamarat']
 
 export default function ResponderRegister() {
@@ -103,6 +112,7 @@ export default function ResponderRegister() {
                     <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${isDark ? tp.badgeDark : tp.badge}`}>
                       {t(tp.labelKey)}
                     </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${tp.tierColor}`}>{tp.tierLabel}</span>
                     {selected && <span className="ml-auto text-amber-500 text-lg">✓</span>}
                   </div>
                   <p className={`text-xs leading-relaxed pl-9 ${textM}`}>{t(tp.descKey)}</p>
@@ -113,10 +123,16 @@ export default function ResponderRegister() {
           {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
         </div>
 
-        {/* Operational note for Emergency Vehicle */}
-        {form.role === 'Emergency Vehicle' && (
-          <div className={`border rounded-xl px-4 py-3 text-xs leading-relaxed ${isDark ? 'bg-red-900/20 border-red-800 text-red-300' : 'bg-red-50 border-red-200 text-red-700'}`}>
-            🚑 <strong>{t('reg_note')}:</strong> {t('reg_vehicle_note')}
+        {/* Operational note for Golf Cart Paramedic */}
+        {form.role === 'golf_cart_paramedic' && (
+          <div className={`border rounded-xl px-4 py-3 text-xs leading-relaxed ${isDark ? 'bg-amber-900/20 border-amber-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+            🛺 <strong>{t('reg_note')}:</strong> {t('reg_golf_cart_note')}
+          </div>
+        )}
+        {/* Info note for Humanitarian Volunteer */}
+        {form.role === 'humanitarian_volunteer' && (
+          <div className={`border rounded-xl px-4 py-3 text-xs leading-relaxed ${isDark ? 'bg-gray-800 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
+            🙋 <strong>{t('reg_note')}:</strong> As a Humanitarian Volunteer, you report emergencies but are not dispatched to provide medical care. Your reports are instantly forwarded to the nearest Paramedic Volunteer.
           </div>
         )}
 
@@ -170,7 +186,7 @@ export default function ResponderRegister() {
         {/* Zone */}
         <div>
           <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${textM}`}>
-            {form.role === 'Emergency Vehicle' ? t('reg_zone_vehicle') : t('reg_zone')}
+            {form.role === 'golf_cart_paramedic' ? t('reg_zone_vehicle') : t('reg_zone')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {ZONES.map(z => (

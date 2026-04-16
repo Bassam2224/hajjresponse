@@ -166,3 +166,54 @@ export function glucoseTextColor(gc, isDark) {
   if (gc.color === 'amber') return isDark ? 'text-amber-300' : 'text-amber-800'
   return isDark ? 'text-red-300' : 'text-red-800'
 }
+
+/**
+ * Returns kit-match info for an incident.
+ * Determines whether a Paramedic Volunteer (Tier 1) is sufficient
+ * or a Golf Cart Paramedic (Tier 2) is required.
+ *
+ * tier 1 = Paramedic Volunteer (on foot) — BLS, glucose gel, cooling spray, wound care
+ * tier 2 = Golf Cart Paramedic — AED, IV, oxygen, glucagon, patient transport
+ */
+export function getKitMatch(inc) {
+  const gc   = (inc?.cgmReading != null) ? classifyGlucose(inc.cgmReading) : null
+  const type = (inc?.type || '').toLowerCase()
+
+  // Cardiac → AED + IV needed → Tier 2
+  if (type.includes('cardiac') || type.includes('chest')) {
+    return { tier: 2, label: 'Golf Cart Required', canVolunteer: false, needsGolfCart: true, note: 'AED + IV access needed' }
+  }
+
+  // DKA or severe hyperglycemia → IV fluids + hospital → Tier 2
+  if (gc && (gc.id === 'dka' || gc.id === 'severe_hyper')) {
+    return { tier: 2, label: 'Golf Cart Required', canVolunteer: false, needsGolfCart: true, note: gc.opsNote }
+  }
+
+  // Critical hypo → glucagon injection + IV glucose → Tier 2
+  if (gc && gc.id === 'critical_hypo') {
+    return { tier: 2, label: 'Golf Cart Required', canVolunteer: false, needsGolfCart: true, note: 'Glucagon kit + IV glucose needed' }
+  }
+
+  // Severe hypo → glucagon injection → Tier 2
+  if (gc && gc.id === 'severe_hypo') {
+    return { tier: 2, label: 'Golf Cart Required', canVolunteer: false, needsGolfCart: true, note: 'Glucagon injection + transport' }
+  }
+
+  // Mild hyperglycemia → IV fluids + DKA monitoring → Tier 2
+  if (gc && gc.id === 'mild_hyper') {
+    return { tier: 2, label: 'Golf Cart Required', canVolunteer: false, needsGolfCart: true, note: 'IV fluids + DKA monitoring' }
+  }
+
+  // Mild hypo → glucose gel → Tier 1 sufficient
+  if (gc && gc.id === 'mild_hypo') {
+    return { tier: 1, label: 'Volunteer Sufficient', canVolunteer: true, needsGolfCart: false, note: 'Glucose gel from volunteer kit' }
+  }
+
+  // Heat exhaustion → cooling spray + hydration → Tier 1
+  if (type.includes('heat')) {
+    return { tier: 1, label: 'Volunteer Sufficient', canVolunteer: true, needsGolfCart: false, note: 'Cooling spray + hydration' }
+  }
+
+  // Default: Tier 1 sufficient
+  return { tier: 1, label: 'Volunteer Sufficient', canVolunteer: true, needsGolfCart: false, note: 'Standard first aid kit' }
+}

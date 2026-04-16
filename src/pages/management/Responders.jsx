@@ -2,14 +2,26 @@ import { useState } from 'react'
 import { useIncidents } from '../../context/IncidentContext'
 
 const ROLE_COLOR = {
-  'Volunteer':              'bg-green-100 text-green-700',
-  'Paramedic (Golf Cart)':  'bg-amber-100 text-amber-700',
-  'Emergency Vehicle':      'bg-red-100   text-red-700',
+  'humanitarian_volunteer': 'bg-gray-100   text-gray-600',
+  'paramedic_volunteer':    'bg-green-100  text-green-700',
+  'golf_cart_paramedic':    'bg-amber-100  text-amber-700',
+  // legacy display labels
+  'Humanitarian Volunteer': 'bg-gray-100   text-gray-600',
+  'Paramedic Volunteer':    'bg-green-100  text-green-700',
+  'Golf Cart Paramedic':    'bg-amber-100  text-amber-700',
 }
 const ROLE_ICON = {
-  'Volunteer':              '🚶',
-  'Paramedic (Golf Cart)':  '🛺',
-  'Emergency Vehicle':      '🚑',
+  'humanitarian_volunteer': '🙋',
+  'paramedic_volunteer':    '🚶',
+  'golf_cart_paramedic':    '🛺',
+  'Humanitarian Volunteer': '🙋',
+  'Paramedic Volunteer':    '🚶',
+  'Golf Cart Paramedic':    '🛺',
+}
+const ROLE_LABEL = {
+  'humanitarian_volunteer': 'Humanitarian Volunteer',
+  'paramedic_volunteer':    'Paramedic Volunteer',
+  'golf_cart_paramedic':    'Golf Cart Paramedic',
 }
 const STATUS_BADGE = {
   'On Duty':  'bg-green-100 text-green-700',
@@ -17,18 +29,18 @@ const STATUS_BADGE = {
 }
 
 const BASE_RESPONDERS = [
-  { id:'R01', name:'Khalid Ali',      role:'Paramedic (Golf Cart)', zone:'Masjid al-Haram', status:'On Duty',  assignment:'INC-003', location:'Sector B-7',  locationAge:'1m ago',  skills:['CPR','AED','IV Access','Patient Transport'] },
-  { id:'R02', name:'Mohammed Rashid', role:'Volunteer',             zone:'Masjid al-Haram', status:'On Duty',  assignment:'INC-001', location:'Sector A-2',  locationAge:'3m ago',  skills:['Basic First Aid','CPR','Crowd Management'] },
-  { id:'R03', name:'Fatima Omar',     role:'Volunteer',             zone:'Masjid al-Haram', status:'On Duty',  assignment:null,      location:'Gate 79',     locationAge:'2m ago',  skills:['Basic First Aid','Crowd Management'] },
-  { id:'R04', name:'Ahmed Hassan',    role:'Paramedic (Golf Cart)', zone:'Mina',            status:'On Duty',  assignment:'INC-002', location:'Tent City C', locationAge:'5m ago',  skills:['CPR','AED','IV Access','Patient Transport'] },
-  { id:'R05', name:'Bilal Malik',     role:'Volunteer',             zone:'Mina',            status:'On Duty',  assignment:null,      location:'Zone 4',      locationAge:'4m ago',  skills:['CPR','Diabetic Emergency'] },
-  { id:'R06', name:'Sara Ahmed',      role:'Paramedic (Golf Cart)', zone:'Arafat',          status:'On Duty',  assignment:null,      location:'Medical Hub', locationAge:'7m ago',  skills:['IV Access','Cardiac Response','Patient Transport'] },
-  { id:'R07', name:'Rami Khan',       role:'Volunteer',             zone:'Arafat',          status:'On Duty',  assignment:null,      location:'East Field',  locationAge:'2m ago',  skills:['Basic First Aid','Crowd Management'] },
-  { id:'R08', name:'Dr. Tariq Nour',  role:'Emergency Vehicle',     zone:'Arafat',          status:'On Duty',  assignment:null,      location:'Arafat Med Point', locationAge:'9m ago', skills:['Advanced Life Support','Intubation','Hospital Transfer'] },
-  { id:'R09', name:'Nadia Diallo',    role:'Volunteer',             zone:'Muzdalifah',      status:'On Duty',  assignment:null,      location:'Main Road',   locationAge:'6m ago',  skills:['Basic First Aid','Crowd Management'] },
-  { id:'R10', name:'Yusuf Ibrahim',   role:'Paramedic (Golf Cart)', zone:'Jamarat',         status:'On Duty',  assignment:null,      location:'Bridge L2',   locationAge:'3m ago',  skills:['CPR','AED','Patient Transport'] },
-  { id:'R11', name:'Hassan Said',     role:'Emergency Vehicle',     zone:'Jamarat',         status:'On Duty',  assignment:null,      location:'Jamarat Med Point', locationAge:'8m ago', skills:['Advanced Life Support','IV Access','Hospital Transfer'] },
-  { id:'R12', name:'Layla Mansour',   role:'Emergency Vehicle',     zone:'Masjid al-Haram', status:'Off Duty', assignment:null,      location:'Base Camp',   locationAge:'1h ago',  skills:['Advanced Life Support','Intubation'] },
+  { id:'R01', name:'Khalid Ali',      role:'golf_cart_paramedic',    zone:'Masjid al-Haram', status:'On Duty',  assignment:'INC-003', location:'Sector B-7',       locationAge:'1m ago',  skills:['CPR','AED','IV Access','Glucagon Administration','Patient Transport'] },
+  { id:'R02', name:'Mohammed Rashid', role:'paramedic_volunteer',    zone:'Masjid al-Haram', status:'On Duty',  assignment:'INC-001', location:'Sector A-2',       locationAge:'3m ago',  skills:['Basic First Aid','CPR','Crowd Navigation','Glucose Gel Administration'] },
+  { id:'R03', name:'Fatima Omar',     role:'paramedic_volunteer',    zone:'Masjid al-Haram', status:'On Duty',  assignment:null,      location:'Gate 79',          locationAge:'2m ago',  skills:['Basic First Aid','Wound Care','Cooling Spray'] },
+  { id:'R04', name:'Ahmed Hassan',    role:'golf_cart_paramedic',    zone:'Mina',            status:'On Duty',  assignment:'INC-002', location:'Tent City C',      locationAge:'5m ago',  skills:['CPR','AED','IV Access','Oxygen Therapy','Patient Transport'] },
+  { id:'R05', name:'Bilal Malik',     role:'paramedic_volunteer',    zone:'Mina',            status:'On Duty',  assignment:null,      location:'Zone 4',           locationAge:'4m ago',  skills:['CPR','Glucose Gel Administration','Diabetic Emergency'] },
+  { id:'R06', name:'Sara Ahmed',      role:'golf_cart_paramedic',    zone:'Arafat',          status:'On Duty',  assignment:null,      location:'Medical Hub',      locationAge:'7m ago',  skills:['IV Access','AED Certified','Cardiac Response','Patient Transport'] },
+  { id:'R07', name:'Rami Khan',       role:'paramedic_volunteer',    zone:'Arafat',          status:'On Duty',  assignment:null,      location:'East Field',       locationAge:'2m ago',  skills:['Basic First Aid','CPR','Crowd Navigation'] },
+  { id:'R08', name:'Dr. Tariq Nour',  role:'golf_cart_paramedic',    zone:'Arafat',          status:'On Duty',  assignment:null,      location:'Arafat Med Point', locationAge:'9m ago',  skills:['IV Access','Glucagon Administration','AED Certified','Patient Transport'] },
+  { id:'R09', name:'Nadia Diallo',    role:'humanitarian_volunteer', zone:'Muzdalifah',      status:'On Duty',  assignment:null,      location:'Main Road',        locationAge:'6m ago',  skills:['Crowd Management','Communication'] },
+  { id:'R10', name:'Yusuf Ibrahim',   role:'golf_cart_paramedic',    zone:'Jamarat',         status:'On Duty',  assignment:null,      location:'Bridge L2',        locationAge:'3m ago',  skills:['CPR','AED','Oxygen Therapy','Patient Transport'] },
+  { id:'R11', name:'Hassan Said',     role:'paramedic_volunteer',    zone:'Jamarat',         status:'On Duty',  assignment:null,      location:'Jamarat Sector 2', locationAge:'8m ago',  skills:['Basic First Aid','CPR','Glucose Gel Administration'] },
+  { id:'R12', name:'Layla Mansour',   role:'humanitarian_volunteer', zone:'Masjid al-Haram', status:'Off Duty', assignment:null,      location:'Base Camp',        locationAge:'1h ago',  skills:['Crowd Management','Basic First Aid'] },
 ]
 
 export default function ManagementResponders() {
@@ -94,12 +106,16 @@ export default function ManagementResponders() {
 
         {/* Role legend */}
         <div className="flex flex-wrap gap-3 mb-4 text-xs">
-          {Object.entries(ROLE_COLOR).map(([role, cls]) => (
-            <div key={role} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold ${cls}`}>
-              <span>{ROLE_ICON[role]}</span>{role}
+          {[
+            ['humanitarian_volunteer','Humanitarian Volunteer'],
+            ['paramedic_volunteer','Paramedic Volunteer'],
+            ['golf_cart_paramedic','Golf Cart Paramedic'],
+          ].map(([id, label]) => (
+            <div key={id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold ${ROLE_COLOR[id]}`}>
+              <span>{ROLE_ICON[id]}</span>{label}
             </div>
           ))}
-          <div className="text-xs text-gray-400 self-center ml-1">Emergency Vehicles are stationed at fixed medical points — never dispatched into crowds</div>
+          <div className="text-xs text-gray-400 self-center ml-1">SRCA Hajj 2025 · Two-tier dispatch model · 550+ personnel</div>
         </div>
 
         {/* Filters */}
@@ -115,9 +131,9 @@ export default function ManagementResponders() {
           </select>
           <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none" value={filterRole}   onChange={e=>setFilterRole(e.target.value)}>
             <option value="">All Roles</option>
-            <option>Volunteer</option>
-            <option>Paramedic (Golf Cart)</option>
-            <option>Emergency Vehicle</option>
+            <option value="humanitarian_volunteer">Humanitarian Volunteer</option>
+            <option value="paramedic_volunteer">Paramedic Volunteer</option>
+            <option value="golf_cart_paramedic">Golf Cart Paramedic</option>
           </select>
         </div>
 
@@ -141,7 +157,7 @@ export default function ManagementResponders() {
                     </td>
                     <td className="px-3 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${ROLE_COLOR[r.role]||'bg-gray-100 text-gray-600'}`}>
-                        {ROLE_ICON[r.role]} {r.role}
+                        {ROLE_ICON[r.role]} {ROLE_LABEL[r.role] || r.role}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-gray-600">{r.zone}</td>
@@ -165,7 +181,7 @@ export default function ManagementResponders() {
                     <td className="px-3 py-3">
                       <div className="flex gap-1.5">
                         <button onClick={() => { setMsgTarget(r); setMsg('') }} className="bg-[#0f1e45] text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg hover:bg-[#1a3060] whitespace-nowrap">Message</button>
-                        {r.status === 'On Duty' && !r.assignment && r.role !== 'Emergency Vehicle' && (
+                        {r.status === 'On Duty' && !r.assignment && r.role !== 'humanitarian_volunteer' && (
                           <button onClick={() => { setAssignTarget(r); setAssignIncident('') }} className="bg-amber-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg hover:bg-amber-600 whitespace-nowrap">Assign</button>
                         )}
                       </div>
@@ -192,12 +208,12 @@ export default function ManagementResponders() {
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status]}`}>{r.status}</span>
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ROLE_COLOR[r.role]||'bg-gray-100'}`}>{ROLE_ICON[r.role]} {r.role}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ROLE_COLOR[r.role]||'bg-gray-100'}`}>{ROLE_ICON[r.role]} {ROLE_LABEL[r.role] || r.role}</span>
                 {r.assignment && <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-2 py-0.5 rounded-full font-semibold">{r.assignment}</span>}
               </div>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => { setMsgTarget(r); setMsg('') }} className="flex-1 bg-[#0f1e45] text-white text-xs font-semibold py-2 rounded-lg">Message</button>
-                {r.status === 'On Duty' && !r.assignment && r.role !== 'Emergency Vehicle' && (
+                {r.status === 'On Duty' && !r.assignment && r.role !== 'humanitarian_volunteer' && (
                   <button onClick={() => { setAssignTarget(r); setAssignIncident('') }} className="flex-1 bg-amber-500 text-white text-xs font-semibold py-2 rounded-lg">Assign</button>
                 )}
               </div>

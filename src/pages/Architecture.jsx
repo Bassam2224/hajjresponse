@@ -28,44 +28,47 @@ const flows = [
   { from:'Responder App',  event:'Navigate + activate patient beacon',       to:'Beacon Trigger', latency:'< 300ms' },
 ]
 
-// Three-tier responder types
+// Two-tier dispatch + humanitarian reporting — verified SRCA Hajj 2025 data
 const RESPONDER_TIERS = [
   {
-    role:'Volunteer (On Foot)',
+    role:'Humanitarian Volunteer',
+    badge:'bg-gray-100 text-gray-600 border-gray-300',
+    icon:'🙋',
+    tier:'Reporting Only',
+    tierColor:'bg-gray-100 text-gray-600',
+    count:'150+',
+    desc:'Reports emergencies to the dispatch system — no medical training required. Does not receive medical dispatch. SRCA Hajj 2025: 150 humanitarian-track volunteers deployed.',
+    handles:['Reports emergency type & location','No medical treatment responsibilities','Crowd safety & communication','Incident created immediately in HajjResponse'],
+  },
+  {
+    role:'Paramedic Volunteer — First Responder',
     badge:'bg-green-100 text-green-700 border-green-300',
     icon:'🚶',
-    tier:'Tier 1',
+    tier:'Tier 1 — On Foot',
     tierColor:'bg-green-100 text-green-700',
-    desc:'First responder for Tier 1 incidents. Navigates on foot through crowd zones. Handles basic first aid and initial stabilisation. Always dispatched first.',
-    handles:['Basic first aid','Initial stabilisation','Crowd navigation','Hypoglycemia — glucose gel if conscious'],
+    count:'400+',
+    desc:'SRCA paramedic-track first responder. Always dispatched first to incidents within 300m. On-foot navigation through crowd zones. SRCA Hajj 2025: 400+ paramedic-track volunteers deployed.',
+    handles:['BLS + CPR','Glucose gel (hypoglycemia only)','Cooling spray & wound care','Escalates to Golf Cart when needed','300m dispatch radius only'],
   },
   {
-    role:'Paramedic — Golf Cart',
+    role:'Medical Golf Cart Paramedic',
     badge:'bg-amber-100 text-amber-700 border-amber-300',
     icon:'🛺',
-    tier:'Tier 2',
+    tier:'Tier 2 — Golf Cart',
     tierColor:'bg-amber-100 text-amber-700',
-    desc:'Handles Tier 2 incidents and patient transport. Carries advanced medical equipment. Transports patients to the nearest fixed medical point via golf cart — navigating service lanes to avoid crowds.',
-    handles:['Advanced first aid','IV access','Cardiac response','Patient transport to medical point'],
-  },
-  {
-    role:'Emergency Vehicle',
-    badge:'bg-red-100 text-red-700 border-red-300',
-    icon:'🚑',
-    tier:'Tier 3',
-    tierColor:'bg-red-100 text-red-700',
-    desc:'Stationed at fixed medical points only. Never dispatched into crowd zones. Receives patients transported by golf cart and transfers them to hospital.',
-    handles:['Advanced life support','Intubation & ALS','Hospital transfer','Receives patients from golf cart'],
+    count:'16 carts',
+    desc:'SRCA certified paramedic with Tier 2 equipment. Responds to escalations and high-acuity incidents. Navigates service lanes (not crowd zones). Transports patients to fixed medical points. SRCA Hajj 2025: 16 golf carts operational.',
+    handles:['AED + defibrillation','IV access + glucagon injection','Oxygen therapy','Patient transport via service lanes','Glucose classification before any treatment'],
   },
 ]
 
 // Transfer chain steps
 const TRANSFER_CHAIN = [
-  { icon:'🚶', label:'Volunteer', sub:'On foot, reaches patient first', color:'bg-green-500', arrow:true },
-  { icon:'🛺', label:'Golf Cart', sub:'Transports patient via service lanes', color:'bg-amber-500', arrow:true },
-  { icon:'🏥', label:'Medical Point', sub:'Fixed location, prepares for patient', color:'bg-blue-500', arrow:true },
-  { icon:'🚑', label:'Ambulance', sub:'Hospital transfer from fixed point', color:'bg-red-500',   arrow:true },
-  { icon:'🏨', label:'Hospital', sub:'Definitive care', color:'bg-purple-500', arrow:false },
+  { icon:'🙋', label:'Report',     sub:'Humanitarian Volunteer or wristband auto-alert', color:'bg-gray-500', arrow:true  },
+  { icon:'🚶', label:'Tier 1',     sub:'Paramedic Volunteer — on foot, first on scene',  color:'bg-green-500', arrow:true },
+  { icon:'🛺', label:'Tier 2',     sub:'Golf Cart Paramedic — service lane transport',   color:'bg-amber-500', arrow:true },
+  { icon:'🏥', label:'Med Point',  sub:'Fixed location — patient handover',               color:'bg-blue-500',  arrow:true },
+  { icon:'🚑', label:'Ambulance',  sub:'Hospital transfer from fixed point only',         color:'bg-red-500',   arrow:false },
 ]
 
 export default function Architecture() {
@@ -219,19 +222,42 @@ export default function Architecture() {
           </div>
         </div>
 
-        {/* ── THREE-TIER RESPONDER MODEL ─────────────────────────────────── */}
+        {/* ── TWO-TIER DISPATCH MODEL ────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="bg-[#0f1e45] px-5 py-3">
-            <h2 className="font-bold text-white text-sm uppercase tracking-wider">Three-Tier Responder Model</h2>
-            <p className="text-white/50 text-xs mt-0.5">Matched dispatch by incident severity — no ambulances in crowd zones</p>
+            <h2 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2">
+              Two-Tier Dispatch Model
+              <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full font-normal">SRCA Hajj 2025 verified</span>
+            </h2>
+            <p className="text-white/50 text-xs mt-0.5">Paramedic Volunteer (on foot) → Golf Cart Paramedic · ambulances only at fixed medical points</p>
           </div>
+
+          {/* SRCA verified stats row */}
+          <div className="grid grid-cols-4 border-b border-gray-100">
+            {[
+              { val:'60,000+', label:'Total Volunteers', sub:'All organisations', color:'text-[#0f1e45]' },
+              { val:'550+',    label:'SRCA Personnel',   sub:'Hajj 2025 total',  color:'text-red-600'    },
+              { val:'400+',    label:'Paramedic Vols',   sub:'Tier 1 — on foot', color:'text-green-600'  },
+              { val:'16',      label:'Golf Carts',        sub:'Tier 2 — SRCA',   color:'text-amber-600'  },
+            ].map(({ val, label, sub, color }) => (
+              <div key={label} className="px-4 py-3 text-center border-r last:border-r-0 border-gray-100">
+                <div className={`text-xl font-black ${color}`}>{val}</div>
+                <div className="text-[10px] font-semibold text-gray-700">{label}</div>
+                <div className="text-[9px] text-gray-400">{sub}</div>
+              </div>
+            ))}
+          </div>
+
           <div className="p-4 grid sm:grid-cols-3 gap-4">
-            {RESPONDER_TIERS.map(({ role, icon, tier, tierColor, desc, handles }) => (
+            {RESPONDER_TIERS.map(({ role, icon, tier, tierColor, count, desc, handles }) => (
               <div key={role} className="rounded-xl border border-gray-100 p-4">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-start gap-2 mb-3">
                   <span className="text-3xl">{icon}</span>
                   <div>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${tierColor}`}>{tier}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${tierColor}`}>{tier}</span>
+                      <span className="text-[9px] text-gray-400 font-semibold">{count}</span>
+                    </div>
                     <div className="text-xs font-bold text-[#0f1e45] mt-0.5">{role}</div>
                   </div>
                 </div>
@@ -246,13 +272,32 @@ export default function Architecture() {
               </div>
             ))}
           </div>
+
+          {/* What HajjResponse adds */}
+          <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-800">
+              <div className="font-bold mb-1">💡 What HajjResponse adds to the existing SRCA system</div>
+              <div className="grid sm:grid-cols-3 gap-3 mt-2">
+                {[
+                  { label:'Automated dispatch', note:'Nearest Tier-1 responder assigned in &lt;200ms — no radio coordination needed' },
+                  { label:'Glucose triage at dispatch', note:'Responder arrives already knowing hypo vs hyper — correct kit selected before leaving station' },
+                  { label:'Kit match badge', note:'Operations dashboard shows whether Tier 1 is sufficient or Golf Cart is needed — before dispatch' },
+                ].map(({ label, note }) => (
+                  <div key={label} className="bg-blue-100/60 rounded-lg p-2">
+                    <div className="font-bold text-blue-700 mb-0.5">{label}</div>
+                    <div className="text-[10px] leading-relaxed" dangerouslySetInnerHTML={{__html: note}} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── TRANSFER CHAIN ────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="bg-amber-500 px-5 py-3">
-            <h2 className="font-bold text-white text-sm uppercase tracking-wider">Golf Cart → Medical Point → Hospital Transfer Chain</h2>
-            <p className="text-amber-100 text-xs mt-0.5">Patients brought to ambulances — ambulances never enter crowd zones</p>
+            <h2 className="font-bold text-white text-sm uppercase tracking-wider">Patient Transfer Chain — Two-Tier Dispatch</h2>
+            <p className="text-amber-100 text-xs mt-0.5">Paramedic Volunteer → Golf Cart Paramedic → Fixed Medical Point → Ambulance/Hospital · crowds never block transfer</p>
           </div>
           <div className="p-5">
             <div className="flex flex-col sm:flex-row items-center gap-3 mb-5">
